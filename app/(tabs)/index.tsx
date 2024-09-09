@@ -1,70 +1,185 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Dimensions,
+  StyleSheet,
+  Image,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+  useWindowDimensions,
+  ScrollView,
+  TouchableOpacity,
+  Text
+} from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+// Component chính của ứng dụng
+const App = () => {
+  const { width, height } = useWindowDimensions();
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(
+    height > width ? 'portrait' : 'landscape'
   );
-}
+
+  const [inputText, setInputText] = useState('');
+
+  const updateOrientation = () => {
+    if (height > width) {
+      setOrientation('portrait');
+    } else {
+      setOrientation('landscape');
+    }
+  };
+
+  useEffect(() => {
+    const handleOrientationChange = ({ window }: { window: any }) => {
+      if (window.height > window.width) {
+        setOrientation('portrait');
+      } else {
+        setOrientation('landscape');
+      }
+    };
+
+    handleOrientationChange({ window: { height, width } });
+
+    const subscription = Dimensions.addEventListener('change', handleOrientationChange);
+
+    return () => {
+      subscription?.remove?.();
+    };
+  }, [height, width]);
+
+  const handleSubmit = () => {
+    if (inputText.toLowerCase() === 'view') {
+      updateOrientation();
+    }
+    setInputText('');
+  };
+
+  const buttonWidth = width / 2 - 30;
+  const imageWidth = width * 0.8;
+  const imageHeight = orientation === 'portrait' ? imageWidth * 0.6 : (imageWidth * 0.6) / 1.5;
+
+  const statusBarBackgroundColor = isDarkMode ? '#333333' : '#ffffff';
+  const statusBarStyle = isDarkMode ? 'light-content' : 'dark-content';
+
+  const textInputColor = '#808080';
+  const buttonBackgroundColor = isDarkMode ? '#808080' : '#999999';
+  const buttonTextColor = isDarkMode ? '#ffffff' : '#000000';
+  const appBackgroundColor = isDarkMode ? '#000000' : '#ffffff';
+
+  const imageSource = isDarkMode
+    ? 'https://mega.com.vn/media/news/0106_hinh-nen-may-tinh-full-hd79.jpg'
+    : 'https://mega.com.vn/media/news/0106_hinh-nen-may-tinh-full-hd19.jpg';
+
+  return (
+    <>
+      {/* Tùy chỉnh thanh trạng thái cho Android */}
+      {Platform.OS !== 'web' && (
+        <StatusBar
+          barStyle={statusBarStyle}
+          backgroundColor={statusBarBackgroundColor}
+          translucent={Platform.OS === 'android'}
+        />
+      )}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView
+          contentContainerStyle={[styles.scrollContainer, { backgroundColor: appBackgroundColor }]}
+        >
+          <View style={[styles.container, { backgroundColor: appBackgroundColor }]}>
+            {/* Hình ảnh thay đổi theo chế độ */}
+            <Image
+              source={{
+                uri: imageSource,
+              }}
+              style={{
+                width: imageWidth,
+                height: imageHeight,
+                marginBottom: 20,
+              }}
+              resizeMode="contain"
+            />
+            <View
+              style={
+                orientation === 'portrait'
+                  ? styles.buttonContainerPortrait
+                  : styles.buttonContainerLandscape
+              }
+            >
+              <TouchableOpacity
+                style={[styles.button, { width: buttonWidth, backgroundColor: buttonBackgroundColor }]}
+                onPress={() => setIsDarkMode(false)}
+              >
+                <Text style={{ color: buttonTextColor }}>Chế độ sáng</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, { width: buttonWidth, backgroundColor: buttonBackgroundColor }]}
+                onPress={() => setIsDarkMode(true)}
+              >
+                <Text style={{ color: buttonTextColor }}>Chế độ tối</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              placeholder="Nhập văn bản ở đây"
+              placeholderTextColor={textInputColor}
+              style={[styles.input, { color: textInputColor }]}
+              value={inputText}
+              onChangeText={setInputText}
+              onSubmitEditing={handleSubmit}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </>
+  );
+};
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  container: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  buttonContainerPortrait: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  buttonContainerLandscape: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 20,
+  },
+  button: {
+    margin: 10,
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#cccccc',
+    padding: 10,
+    width: '100%',
+    borderRadius: 5,
   },
 });
+
+export default App;
